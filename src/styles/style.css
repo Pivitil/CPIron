@@ -85,12 +85,14 @@ form {
     display: flex;
     flex-direction: column;
     align-items: center;
+    width: 100%; /* Ensure form takes full width */
+    max-width: 600px; /* Ensure form does not exceed container width */
 }
 
 .form-group {
     margin-bottom: 20px;
     width: 100%;
-    max-width: 300px;
+    max-width: 300px; /* Ensure form groups have consistent width */
 }
 
 .form-buttons {
@@ -109,6 +111,7 @@ form select, form input, form textarea {
     box-sizing: border-box;
     border: 1px solid var(--secondary-color);
     background-color: var(--background-color);
+    margin-bottom: 10px; /* Add spacing between form elements */
 }
 
 form select::placeholder, form input::placeholder, form textarea::placeholder {
@@ -149,10 +152,11 @@ form select::placeholder, form input::placeholder, form textarea::placeholder {
     padding: 8px;
     font-size: 16px;
     font-family: Arial, sans-serif; /* Ensure consistent font type */
-    color: var (--text-color); /* Ensure consistent text color */
+    color: var(--text-color); /* Ensure consistent text color */
     box-sizing: border-box;
     border: 1px solid var(--secondary-color);
     background-color: var(--background-color);
+    margin-bottom: 10px; /* Add spacing between routine elements */
 }
 
 .routine select::placeholder, .routine input::placeholder {
@@ -164,6 +168,16 @@ form select::placeholder, form input::placeholder, form textarea::placeholder {
     justify-content: center;
     gap: 10px;
     margin-top: 10px;
+}
+
+.habit-container {
+    width: 100%;
+    max-width: 600px;
+    padding: 20px;
+    background-color: var(--box-background-color); /* Dark Grey for the working box */
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+    margin-top: 20px;
+    color: var(--text-color);
 }
 
 table {
