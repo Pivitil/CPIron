@@ -1,5 +1,5 @@
 document.getElementById('home-btn').addEventListener('click', function() {
-    location.href = 'index.html';
+    location.href = '../index.html';
 });
 
 document.getElementById('export-btn').addEventListener('click', function() {

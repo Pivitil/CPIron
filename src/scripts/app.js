@@ -1,148 +1,187 @@
-document.getElementById('date-range-form').addEventListener('submit', function(event) {
-    event.preventDefault();
-    const startDate = new Date(document.getElementById('start-date').value);
-    const endDate = new Date(document.getElementById('end-date').value);
-    console.log('Start Date:', startDate);
-    console.log('End Date:', endDate);
-    generateReport(startDate, endDate);
-});
+import WorkoutTracker from './components/WorkoutTracker.js';
+import HabitTracker from './components/HabitTracker.js';
+import ProteinTracker from './components/ProteinTracker.js';
+import { exercises } from './data/Exercises.js';
 
-document.getElementById('export-btn').addEventListener('click', function() {
-    const workoutData = JSON.parse(localStorage.getItem('workoutData')) || [];
-    const habitData = JSON.parse(localStorage.getItem('habitData')) || [];
-    const proteinData = JSON.parse(localStorage.getItem('proteinData')) || {};
+document.addEventListener('DOMContentLoaded', () => {
+    const app = document.getElementById('app');
+    app.innerHTML = `
+        <div class="button-container">
+            <button id="workout-btn">Track Workout</button>
+            <button id="habit-btn">Track Habits</button>
+            <button id="protein-btn">Track Protein</button>
+            <button id="insights-btn">Insights</button>
+        </div>
+        <div id="content"></div>
+    `;
 
-    const data = {
-        workoutData,
-        habitData,
-        proteinData
-    };
-
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'data.json';
-    a.click();
-    URL.revokeObjectURL(url);
-});
-
-document.getElementById('home-btn').addEventListener('click', function() {
-    location.href = 'index.html';
-});
-
-function generateReport(startDate, endDate) {
-    const reportDiv = document.getElementById('report');
-    reportDiv.innerHTML = '';
-
-    const workoutData = JSON.parse(localStorage.getItem('workoutData')) || [];
-    const habitData = JSON.parse(localStorage.getItem('habitData')) || [];
-    const proteinData = JSON.parse(localStorage.getItem('proteinData')) || {};
-
-    console.log('Workout Data:', workoutData);
-    console.log('Habit Data:', habitData);
-    console.log('Protein Data:', proteinData);
-
-    const filteredWorkoutData = workoutData.filter(data => {
-        const date = new Date(data.timestamp);
-        return date >= startDate && date <= endDate;
+    document.getElementById('workout-btn').addEventListener('click', () => {
+        document.getElementById('content').innerHTML = WorkoutTracker();
+        addWorkoutFormListener();
     });
 
-    const filteredHabitData = habitData.filter(data => {
-        const date = new Date(data.timestamp);
-        return date >= startDate && date <= endDate;
+    document.getElementById('habit-btn').addEventListener('click', () => {
+        document.getElementById('content').innerHTML = HabitTracker();
+        addHabitFormListener();
     });
 
-    const filteredProteinData = Object.keys(proteinData).filter(date => {
-        const currentDate = new Date(date);
-        return currentDate >= startDate && currentDate <= endDate;
-    }).reduce((obj, key) => {
-        obj[key] = proteinData[key];
-        return obj;
-    }, {});
+    document.getElementById('protein-btn').addEventListener('click', () => {
+        document.getElementById('content').innerHTML = ProteinTracker();
+        addProteinFormListener();
+    });
+    
+    document.getElementById('insights-btn').addEventListener('click', () => {
+        location.href = 'src/insights.html';
+    });
+});
 
-    console.log('Filtered Workout Data:', filteredWorkoutData);
-    console.log('Filtered Habit Data:', filteredHabitData);
-    console.log('Filtered Protein Data:', filteredProteinData);
+function addWorkoutFormListener() {
+    let routineCounter = 0;
 
-    reportDiv.innerHTML += generateWorkoutTable('Workout Data', filteredWorkoutData);
-    reportDiv.innerHTML += generateHabitTable('Habit Data', filteredHabitData);
-    reportDiv.innerHTML += generateProteinTable('Protein Data', filteredProteinData);
-}
+    const addRoutineBtn = document.getElementById('add-routine-btn');
+    const endWorkoutBtn = document.getElementById('end-workout-btn');
 
-function generateWorkoutTable(title, data) {
-    if (data.length === 0) {
-        return `<h3>${title}</h3><p>No data available for the selected date range.</p>`;
+    if (addRoutineBtn) {
+        addRoutineBtn.addEventListener('click', addRoutine);
     }
 
-    const headers = {
-        timestamp: 'Date',
-        routineNumber: 'Routine',
-        focusArea: 'Area',
-        exercise: 'Exercise'
-    };
+    if (endWorkoutBtn) {
+        endWorkoutBtn.addEventListener('click', endWorkout);
+    }
 
-    console.log('Headers:', headers);
-    console.log('Data:', data);
+    function addRoutine() {
+        routineCounter++;
+        const routineDiv = document.createElement('div');
+        routineDiv.classList.add('routine');
+        routineDiv.innerHTML = `
+            <h3>Routine ${routineCounter}</h3>
+            <div>
+                <select id="focus-area" name="focus-area" required>
+                    <option value="" disabled selected>Select Focus Area</option>
+                    ${Object.keys(exercises).map(area => `<option value="${area}">${area}</option>`).join('')}
+                </select>
+            </div>
+            <div>
+                <select id="exercise" name="exercise" required>
+                    <option value="" disabled selected>Select Exercise</option>
+                </select>
+            </div>
+            <div id="sets"></div>
+            <div class="routine-buttons">
+                <button type="button" class="add-set-btn">Add Set</button>
+                <button type="button" class="add-routine-btn">Add Routine</button>
+                <button type="button" class="end-workout-btn">End Workout</button>
+            </div>
+        `;
+        document.getElementById('routines').appendChild(routineDiv);
+        document.getElementById('end-workout-btn').style.display = 'block';
 
-    let table = `<h3>${title}</h3><table><thead><tr>`;
-    Object.keys(headers).forEach(key => {
-        table += `<th>${headers[key]}</th>`;
-    });
-    table += `</tr></thead><tbody>`;
+        const focusAreaSelect = routineDiv.querySelector('#focus-area');
+        const exerciseSelect = routineDiv.querySelector('#exercise');
+        focusAreaSelect.addEventListener('change', () => {
+            const selectedArea = focusAreaSelect.value;
+            exerciseSelect.innerHTML = `<option value="" disabled selected>Select Exercise</option>` + exercises[selectedArea].map(exercise => `<option value="${exercise}">${exercise}</option>`).join('');
+        });
 
-    data.forEach(row => {
-        table += `<tr>`;
-        Object.keys(headers).forEach(key => {
-            let value = row[key];
-            if (key === 'timestamp') {
-                value = new Date(value).toLocaleDateString(); // Convert to local date
+        routineDiv.querySelector('.add-set-btn').addEventListener('click', () => addSet(routineDiv));
+        routineDiv.querySelector('.add-routine-btn').addEventListener('click', addRoutine);
+        routineDiv.querySelector('.end-workout-btn').addEventListener('click', endWorkout);
+    }
+
+    function addSet(routineDiv) {
+        const setsDiv = routineDiv.querySelector('#sets');
+        let setCounter = setsDiv.childElementCount + 1;
+        const setDiv = document.createElement('div');
+        setDiv.classList.add('set');
+        setDiv.innerHTML = `
+            <h4>Set ${setCounter}</h4>
+            <div>
+                <input type="number" id="weight" name="weight" placeholder="Enter Weight (lbs)" required>
+            </div>
+            <div>
+                <input type="number" id="reps" name="reps" placeholder="Enter Reps" required>
+            </div>
+        `;
+        setsDiv.appendChild(setDiv);
+    }
+
+    function endWorkout() {
+        const routines = document.querySelectorAll('.routine');
+        const workoutData = [];
+        routines.forEach((routine, routineIndex) => {
+            const focusArea = routine.querySelector('#focus-area').value;
+            const exercise = routine.querySelector('#exercise').value;
+            routine.querySelectorAll('.set').forEach((set, setIndex) => {
+                const weight = set.querySelector('#weight').value;
+                const reps = set.querySelector('#reps').value;
+                workoutData.push({
+                    timestamp: new Date().toISOString(),
+                    routineNumber: routineIndex + 1,
+                    focusArea,
+                    exercise,
+                    setNumber: setIndex + 1,
+                    setWeight: weight,
+                    setReps: reps
+                });
+            });
+        });
+        let storedWorkoutData = JSON.parse(localStorage.getItem('workoutData')) || [];
+        if (!Array.isArray(storedWorkoutData)) {
+            storedWorkoutData = [];
+        }
+        storedWorkoutData.push(...workoutData);
+        localStorage.setItem('workoutData', JSON.stringify(storedWorkoutData));
+        alert('Workout data saved!');
+        document.getElementById('routines').innerHTML = '';
+        document.getElementById('end-workout-btn').style.display = 'none';
+        routineCounter = 0; // Reset the counter after ending the workout
+    }
+}
+
+function addHabitFormListener() {
+    const form = document.getElementById('habit-form');
+    if (form) {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const sleep = document.getElementById('sleep').value;
+            const stress = document.getElementById('stress').value;
+            const weight = document.getElementById('weight').value;
+            const notes = document.getElementById('notes').value;
+            let habitData = JSON.parse(localStorage.getItem('habitData')) || [];
+            if (!Array.isArray(habitData)) {
+                habitData = [];
             }
-            console.log(`Row: ${JSON.stringify(row)}`); // Debugging log for each row
-            console.log(`Key: ${key}, Value: ${value}`); // Debugging log for each key-value pair
-            table += `<td>${value}</td>`;
+            habitData.push({ sleep, stress, weight, notes, timestamp: new Date().toISOString() });
+            localStorage.setItem('habitData', JSON.stringify(habitData));
+            alert('Habit data saved!');
         });
-        table += `</tr>`;
-    });
-
-    table += `</tbody></table>`;
-    return table;
+    }
 }
 
-function generateHabitTable(title, data) {
-    if (data.length === 0) {
-        return `<h3>${title}</h3><p>No data available for the selected date range.</p>`;
-    }
+function addProteinFormListener() {
+    const form = document.getElementById('protein-form');
+    if (form) {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const proteinGoal = document.getElementById('protein-goal').value;
+            const proteinIntake = document.getElementById('protein-intake').value;
+            const today = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
 
-    let table = `<h3>${title}</h3><table><thead><tr>`;
-    Object.keys(data[0]).forEach(key => {
-        table += `<th>${key}</th>`;
-    });
-    table += `</tr></thead><tbody>`;
+            let proteinData = JSON.parse(localStorage.getItem('proteinData')) || {};
+            if (!proteinData[today]) {
+                proteinData[today] = { goal: proteinGoal, intake: 0 };
+            }
+            proteinData[today].intake += parseInt(proteinIntake, 10);
 
-    data.forEach(row => {
-        table += `<tr>`;
-        Object.values(row).forEach(value => {
-            table += `<td>${value}</td>`;
+            localStorage.setItem('proteinData', JSON.stringify(proteinData));
+
+            const percentage = ((proteinData[today].intake / proteinData[today].goal) * 100).toFixed(2);
+            document.getElementById('protein-status').innerText = `You've consumed ${proteinData[today].intake} protein for the day which is ${percentage}% of today's goal.`;
+
+            // Reset the protein intake input field
+            document.getElementById('protein-intake').value = '';
+
+            alert('Protein data saved!');
         });
-        table += `</tr>`;
-    });
-
-    table += `</tbody></table>`;
-    return table;
-}
-
-function generateProteinTable(title, data) {
-    if (Object.keys(data).length === 0) {
-        return `<h3>${title}</h3><p>No data available for the selected date range.</p>`;
     }
-
-    let table = `<h3>${title}</h3><table><thead><tr><th>Date</th><th>Goal</th><th>Intake</th></tr></thead><tbody>`;
-
-    Object.keys(data).forEach(date => {
-        table += `<tr><td>${date}</td><td>${data[date].goal}</td><td>${data[date].intake}</td></tr>`;
-    });
-
-    table += `</tbody></table>`;
-    return table;
 }
