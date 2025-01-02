@@ -1,5 +1,7 @@
 document.getElementById('home-btn').addEventListener('click', function() {
-    location.href = '../index.html';
+    const currentUrl = window.location.href;
+    const homePath = currentUrl.includes('my-web-app') ? '../index.html' : '../../index.html';
+    location.href = homePath;
 });
 
 document.getElementById('export-btn').addEventListener('click', function() {
