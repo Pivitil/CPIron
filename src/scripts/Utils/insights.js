@@ -1,10 +1,5 @@
-document.getElementById('date-range-form').addEventListener('submit', function(event) {
-    event.preventDefault();
-    const startDate = new Date(document.getElementById('start-date').value);
-    const endDate = new Date(document.getElementById('end-date').value);
-    console.log('Start Date:', startDate);
-    console.log('End Date:', endDate);
-    generateReport(startDate, endDate);
+document.getElementById('home-btn').addEventListener('click', function() {
+    location.href = 'index.html';
 });
 
 document.getElementById('export-btn').addEventListener('click', function() {
@@ -18,30 +13,37 @@ document.getElementById('export-btn').addEventListener('click', function() {
         proteinData
     };
 
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const csv = convertToCSV(data);
+    const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'data.json';
+    a.download = 'data.csv';
     a.click();
     URL.revokeObjectURL(url);
 });
 
-document.getElementById('home-btn').addEventListener('click', function() {
-    location.href = 'index.html';
+document.getElementById('workout-report-btn').addEventListener('click', function() {
+    generateReport('workout');
 });
 
-function generateReport(startDate, endDate) {
+document.getElementById('habits-report-btn').addEventListener('click', function() {
+    generateReport('habits');
+});
+
+document.getElementById('protein-report-btn').addEventListener('click', function() {
+    generateReport('protein');
+});
+
+function generateReport(type) {
+    const startDate = new Date(document.getElementById('start-date').value);
+    const endDate = new Date(document.getElementById('end-date').value);
     const reportDiv = document.getElementById('report');
     reportDiv.innerHTML = '';
 
     const workoutData = JSON.parse(localStorage.getItem('workoutData')) || [];
     const habitData = JSON.parse(localStorage.getItem('habitData')) || [];
     const proteinData = JSON.parse(localStorage.getItem('proteinData')) || {};
-
-    console.log('Workout Data:', workoutData);
-    console.log('Habit Data:', habitData);
-    console.log('Protein Data:', proteinData);
 
     const filteredWorkoutData = workoutData.filter(data => {
         const date = new Date(data.timestamp);
@@ -61,13 +63,13 @@ function generateReport(startDate, endDate) {
         return obj;
     }, {});
 
-    console.log('Filtered Workout Data:', filteredWorkoutData);
-    console.log('Filtered Habit Data:', filteredHabitData);
-    console.log('Filtered Protein Data:', filteredProteinData);
-
-    reportDiv.innerHTML += generateWorkoutTable('Workout Data', filteredWorkoutData);
-    reportDiv.innerHTML += generateHabitTable('Habit Data', filteredHabitData);
-    reportDiv.innerHTML += generateProteinTable('Protein Data', filteredProteinData);
+    if (type === 'workout') {
+        reportDiv.innerHTML += generateWorkoutTable('Workout Data', filteredWorkoutData);
+    } else if (type === 'habits') {
+        reportDiv.innerHTML += generateHabitTable('Habit Data', filteredHabitData);
+    } else if (type === 'protein') {
+        reportDiv.innerHTML += generateProteinTable('Protein Data', filteredProteinData);
+    }
 }
 
 function generateWorkoutTable(title, data) {
@@ -77,13 +79,12 @@ function generateWorkoutTable(title, data) {
 
     const headers = {
         timestamp: 'Date',
-        routineNumber: 'Routine',
         focusArea: 'Area',
-        exercise: 'Exercise'
+        exercise: 'Exercise',
+        setNumber: 'Set',
+        setWeight: 'Weight',
+        setReps: 'Reps'
     };
-
-    console.log('Headers:', headers);
-    console.log('Data:', data);
 
     let table = `<h3>${title}</h3><table><thead><tr>`;
     Object.keys(headers).forEach(key => {
@@ -98,8 +99,6 @@ function generateWorkoutTable(title, data) {
             if (key === 'timestamp') {
                 value = new Date(value).toLocaleDateString(); // Convert to local date
             }
-            console.log(`Row: ${JSON.stringify(row)}`); // Debugging log for each row
-            console.log(`Key: ${key}, Value: ${value}`); // Debugging log for each key-value pair
             table += `<td>${value}</td>`;
         });
         table += `</tr>`;
@@ -114,15 +113,25 @@ function generateHabitTable(title, data) {
         return `<h3>${title}</h3><p>No data available for the selected date range.</p>`;
     }
 
+    const headers = {
+        timestamp: 'Date',
+        habit: 'Habit',
+        status: 'Status'
+    };
+
     let table = `<h3>${title}</h3><table><thead><tr>`;
-    Object.keys(data[0]).forEach(key => {
-        table += `<th>${key}</th>`;
+    Object.keys(headers).forEach(key => {
+        table += `<th>${headers[key]}</th>`;
     });
     table += `</tr></thead><tbody>`;
 
     data.forEach(row => {
         table += `<tr>`;
-        Object.values(row).forEach(value => {
+        Object.keys(headers).forEach(key => {
+            let value = row[key];
+            if (key === 'timestamp') {
+                value = new Date(value).toLocaleDateString(); // Convert to local date
+            }
             table += `<td>${value}</td>`;
         });
         table += `</tr>`;
@@ -140,9 +149,51 @@ function generateProteinTable(title, data) {
     let table = `<h3>${title}</h3><table><thead><tr><th>Date</th><th>Goal</th><th>Intake</th></tr></thead><tbody>`;
 
     Object.keys(data).forEach(date => {
-        table += `<tr><td>${date}</td><td>${data[date].goal}</td><td>${data[date].intake}</td></tr>`;
+        let value = new Date(date).toLocaleDateString(); // Convert to local date
+        table += `<tr><td>${value}</td><td>${data[date].goal}</td><td>${data[date].intake}</td></tr>`;
     });
 
     table += `</tbody></table>`;
     return table;
+}
+
+function convertToCSV(data) {
+    const workoutData = data.workoutData.map(row => ({
+        Date: new Date(row.timestamp).toLocaleDateString(),
+        Area: row.focusArea,
+        Exercise: row.exercise,
+        Set: row.setNumber,
+        Weight: row.setWeight,
+        Reps: row.setReps
+    }));
+
+    const habitData = data.habitData.map(row => ({
+        Date: new Date(row.timestamp).toLocaleDateString(),
+        Habit: row.habit,
+        Status: row.status
+    }));
+
+    const proteinData = Object.keys(data.proteinData).map(date => ({
+        Date: new Date(date).toLocaleDateString(),
+        Goal: data.proteinData[date].goal,
+        Intake: data.proteinData[date].intake
+    }));
+
+    const allData = [
+        ...workoutData,
+        ...habitData,
+        ...proteinData
+    ];
+
+    const headers = Object.keys(allData[0]);
+    const csvRows = [
+        headers.join(','), // header row first
+        ...allData.map(row => headers.map(header => JSON.stringify(row[header], replacer)).join(','))
+    ];
+
+    return csvRows.join('\n');
+}
+
+function replacer(key, value) {
+    return value === null ? '' : value;
 }

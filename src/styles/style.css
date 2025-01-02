@@ -66,7 +66,7 @@ h1 {
     margin-bottom: 20px;
 }
 
-.button-container button, form button, .routine-buttons button {
+.button-container button, form button, .routine-buttons button, .form-buttons button {
     width: 150px; /* Set a fixed width for all buttons */
     padding: 10px;
     font-size: 16px;
@@ -76,7 +76,7 @@ h1 {
     cursor: pointer;
 }
 
-.button-container button:hover, form button:hover, .routine-buttons button:hover {
+.button-container button:hover, form button:hover, .routine-buttons button:hover, .form-buttons button:hover {
     background-color: var(--secondary-color);
     color: var(--background-color);
 }
@@ -87,10 +87,17 @@ form {
     align-items: center;
 }
 
-form div {
-    margin-bottom: 10px;
+.form-group {
+    margin-bottom: 20px;
     width: 100%;
     max-width: 300px;
+}
+
+.form-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
 }
 
 form select, form input, form textarea {
@@ -142,7 +149,7 @@ form select::placeholder, form input::placeholder, form textarea::placeholder {
     padding: 8px;
     font-size: 16px;
     font-family: Arial, sans-serif; /* Ensure consistent font type */
-    color: var(--text-color); /* Ensure consistent text color */
+    color: var (--text-color); /* Ensure consistent text color */
     box-sizing: border-box;
     border: 1px solid var(--secondary-color);
     background-color: var(--background-color);
@@ -157,4 +164,24 @@ form select::placeholder, form input::placeholder, form textarea::placeholder {
     justify-content: center;
     gap: 10px;
     margin-top: 10px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    table-layout: fixed; /* Ensure table layout is fixed */
+}
+
+th, td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: left;
+    word-wrap: break-word; /* Ensure long words break to fit within the cell */
+}
+
+th {
+    background-color: var(--primary-color);
+    color: var(--secondary-color);
+    text-align: center; /* Center the headers */
 }
